@@ -2,9 +2,9 @@ const API_KEY = 'db560b79';
 const watchlist = JSON.parse(localStorage.getItem('watchlist')) || [];
 let allResults = [];
 let currentIndex = 0;
-const STEP = 5; // 5 per baris
+const STEP = 10;
 
-// translate
+// helpers
 const trID = async (t) => {
   if (!t || t === 'N/A') return 'Sinopsis tidak tersedia';
   try {
@@ -12,8 +12,6 @@ const trID = async (t) => {
     return (await res.json())[0][0][0] || t;
   } catch { return t; }
 };
-
-// imdb link
 const imdbLink = (txt, type = 'name') => {
   const base = type === 'genre' ? 'https://www.imdb.com/search/title/?genres=' : 'https://www.imdb.com/find/?q=';
   return `<a href="${base}${encodeURIComponent(txt)}" target="_blank" rel="noopener">${txt}</a>`;
@@ -41,7 +39,9 @@ async function searchMovie() {
 
 async function renderResults(clear = true) {
   const container = document.getElementById('results');
+  const btn = document.getElementById('loadMoreBtn');
   if (clear) container.innerHTML = '';
+
   const slice = allResults.slice(currentIndex, currentIndex + STEP);
   for (const m of slice) {
     const d = await (await fetch(`https://www.omdbapi.com/?apikey=${API_KEY}&i=${m.imdbID}&plot=short`)).json();
@@ -51,10 +51,10 @@ async function renderResults(clear = true) {
     const director = d.Director !== 'N/A' ? imdbLink(d.Director.trim()) : 'Tidak tersedia';
 
     const card = document.createElement('div');
-    card.className = 'movie-card-horizontal';
+    card.className = 'movie-card';
     card.innerHTML = `
-      <img src="${m.Poster !== 'N/A' ? m.Poster : 'https://via.placeholder.com/200x300?text=No+Image'}" alt="${m.Title}">
-      <div class="card-body">
+      <img src="${m.Poster !== 'N/A' ? m.Poster : 'https://via.placeholder.com/120x180?text=No+Image'}" alt="${m.Title}">
+      <div class="movie-info">
         <h3>${imdbLink(`${m.Title} (${m.Year})`, 'title')}</h3>
         <p><strong>Sutradara:</strong> ${director}</p>
         <p><strong>Pemeran:</strong> ${actors}</p>
@@ -66,16 +66,10 @@ async function renderResults(clear = true) {
     container.appendChild(card);
   }
   currentIndex += STEP;
-  document.getElementById('loadMoreBtn')?.remove();
-  if (currentIndex < allResults.length) {
-    const btn = document.createElement('button');
-    btn.id = 'loadMoreBtn';
-    btn.textContent = 'Load More';
-    btn.className = 'load-more';
-    btn.onclick = () => renderResults(false);
-    container.appendChild(btn);
-  }
+  btn.classList.toggle('hidden', currentIndex >= allResults.length);
 }
+
+document.getElementById('loadMoreBtn').addEventListener('click', () => renderResults(false));
 
 // watchlist
 async function addToWatchlist(id) {
@@ -104,11 +98,10 @@ function renderWatchlist() {
     : '<p style="text-align:center;color:var(--muted)">Belum ada film ditonton</p>';
   watchlist.forEach((m, i) => {
     const card = document.createElement('div');
-    card.className = 'movie-card-horizontal';
-    card.style.maxWidth = '100%';
+    card.className = 'movie-card';
     card.innerHTML = `
       <img src="${m.poster !== 'N/A' ? m.poster : 'https://via.placeholder.com/120x180?text=No+Image'}" alt="${m.title}">
-      <div class="card-body">
+      <div class="movie-info">
         <h3>${imdbLink(`${m.title} (${m.year})`, 'title')}</h3>
         <p><strong>Sutradara:</strong> ${imdbLink(m.director)}</p>
         <p><strong>Pemeran:</strong> ${m.actors.split(',').map(a => imdbLink(a.trim())).join(', ')}</p>
