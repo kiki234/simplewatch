@@ -1,4 +1,4 @@
-const API_KEY = 'db560b79';
+const API_KEY = '57e205fb86msh5d562a2d2fdaa5ap1ebf04jsn85b34ca887a4';
 const watchlist = JSON.parse(localStorage.getItem('watchlist')) || [];
 
 // Fungsi terjemahan menggunakan Google Translate API gratis
