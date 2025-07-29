@@ -12,6 +12,7 @@
       --text: #ffffff;
       --muted: #8d99ae;
       --danger: #e63946;
+      --star: #fbbf24;
     }
     *{box-sizing:border-box;margin:0;padding:0;font-family:Inter,system-ui,sans-serif}
     body{background:var(--bg);color:var(--text);display:flex;min-height:100vh}
@@ -37,6 +38,8 @@
     .btn-add:hover{background:#4ab0ae}
     .btn-remove{background:var(--danger);color:#fff;font-size:.7rem}
     .btn-remove:hover{background:#c33}
+    .star{color:#d1d5db;font-size:1.2rem;cursor:pointer}
+    .star.active{color:var(--star)}
     .load-more{display:block;margin:1.5rem auto;padding:.6rem 1.4rem;background:var(--accent);color:#000;border:none;border-radius:50px;cursor:pointer;font-weight:600}
     .hidden{display:none}
     @media(max-width:700px){body{flex-direction:column}aside{width:100%;border-right:none;border-bottom:1px solid #2a2e45}}
@@ -74,6 +77,14 @@
       return `<a href="${base}${encodeURIComponent(txt)}" target="_blank" rel="noopener">${txt}</a>`;
     };
 
+    const renderStars = rating => {
+      const stars = [];
+      for (let i = 1; i <= 10; i++) {
+        stars.push(`<span class="star ${i <= rating ? 'active' : ''}">★</span>`);
+      }
+      return stars.join('');
+    };
+
     document.getElementById('keyword').addEventListener('keydown', e => { if (e.key === 'Enter') searchMovies(); });
     document.getElementById('searchBtn').addEventListener('click', searchMovies);
 
@@ -102,6 +113,7 @@
         const d = await (await fetch(`https://www.omdbapi.com/?apikey=${API_KEY}&i=${m.imdbID}&plot=short`)).json();
         const plot = d.Plot !== 'N/A' ? d.Plot : 'Sinopsis tidak tersedia';
         const genres = d.Genre !== 'N/A' ? d.Genre.split(',').slice(0, 5).join(', ') : 'Tidak tersedia';
+        const rating = parseFloat(d.imdbRating) || 0;
 
         const el = document.createElement('div');
         el.className = 'card';
@@ -111,6 +123,7 @@
             <h3>${imdbLink(`${d.Title} (${d.Year})`, 'title')}</h3>
             <p><strong>Genre:</strong> ${genres}</p>
             <p><strong>Sinopsis:</strong> ${plot}</p>
+            <div class="rating">${renderStars(rating)}</div>
             <button class="btn-mini btn-add" onclick="addToWatchlist('${d.imdbID}')">+ Watchlist</button>
           </div>
         `;
@@ -126,7 +139,8 @@
       if (watchlist.some(w => w.id === id)) return;
       const d = await (await fetch(`https://www.omdbapi.com/?apikey=${API_KEY}&i=${id}&plot=short`)).json();
       const genres = d.Genre !== 'N/A' ? d.Genre.split(',').slice(0, 5).join(', ') : 'Tidak tersedia';
-      watchlist.unshift({ id: d.imdbID, title: d.Title, genres, poster: d.Poster });
+      const rating = parseFloat(d.imdbRating) || 0;
+      watchlist.unshift({ id: d.imdbID, title: d.Title, genres, poster: d.Poster, rating });
       localStorage.setItem('watchlist', JSON.stringify(watchlist));
       renderWatchlist();
     }
@@ -144,6 +158,7 @@
           <div class="info">
             <h3>${imdbLink(m.title, 'title')}</h3>
             <p><strong>Genre:</strong> ${m.genres}</p>
+            <div class="rating">${renderStars(m.rating)}</div>
             <button class="btn-mini btn-remove" onclick="remove('${m.id}')">Hapus</button>
           </div>
         `;
