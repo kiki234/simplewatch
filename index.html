@@ -15,7 +15,7 @@
       --star: #fbbf24;
     }
     *{box-sizing:border-box;margin:0;padding:0;font-family:Inter,system-ui,sans-serif}
-    body{background:var(--bg);color:var(--text);display:flex;flex-direction:column;align-items:center;min-height:100vh}
+    body{background:var(--bg);color:var(--text);display:flex;min-height:100vh}
     aside{width:320px;background:#0f172a;border-right:1px solid #2a2e45;padding:1rem;display:flex;flex-direction:column}
     aside h2{margin-bottom:.75rem;font-size:1.1rem}
     aside .wrap{display:flex;flex-direction:column;gap:.75rem}
@@ -42,26 +42,10 @@
     .star.active{color:var(--star)}
     .load-more{display:block;margin:1.5rem auto;padding:.6rem 1.4rem;background:var(--accent);color:#000;border:none;border-radius:50px;cursor:pointer;font-weight:600}
     .hidden{display:none}
-    .banner{width:100%;max-width:1200px;margin:2rem auto;overflow:hidden;position:relative}
-    .banner img{width:100%;height:300px;object-fit:cover;transition:transform .5s ease-in-out}
-    .banner .prev,.banner .next{position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.5);color:#fff;padding:.5rem;cursor:pointer;z-index:10}
-    .banner .prev{left:0}
-    .banner .next{right:0}
     @media(max-width:700px){body{flex-direction:column}aside{width:100%;border-right:none;border-bottom:1px solid #2a2e45}}
   </style>
 </head>
 <body>
-
-  <!-- BANNER UTAMA -->
-  <div class="banner">
-    <img src="https://via.placeholder.com/1200x300?text=Film+Trending+1" alt="Trending 1">
-    <img src="https://via.placeholder.com/1200x300?text=Film+Trending+2" alt="Trending 2" style="display:none">
-    <img src="https://via.placeholder.com/1200x300?text=Film+Trending+3" alt="Trending 3" style="display:none">
-    <img src="https://via.placeholder.com/1200x300?text=Film+Trending+4" alt="Trending 4" style="display:none">
-    <img src="https://via.placeholder.com/1200x300?text=Film+Trending+5" alt="Trending 5" style="display:none">
-    <div class="prev" onclick="prevSlide()">&#10094;</div>
-    <div class="next" onclick="nextSlide()">&#10095;</div>
-  </div>
 
   <!-- SIDEBAR : SUDAH DITONTON -->
   <aside>
@@ -189,28 +173,6 @@
     }
 
     renderWatchlist();
-
-    // Banner autoplay
-    let currentSlide = 0;
-    const slides = document.querySelectorAll('.banner img');
-    const totalSlides = slides.length;
-
-    function showSlide(index) {
-      slides.forEach((slide, i) => {
-        slide.style.display = i === index ? 'block' : 'none';
-      });
-      currentSlide = index;
-    }
-
-    function nextSlide() {
-      showSlide((currentSlide + 1) % totalSlides);
-    }
-
-    function prevSlide() {
-      showSlide((currentSlide - 1 + totalSlides) % totalSlides);
-    }
-
-    setInterval(nextSlide, 5000); // Change slide every 5 seconds
   </script>
 </body>
 </html>
