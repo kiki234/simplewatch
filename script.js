@@ -1,4 +1,4 @@
-const API_KEY = 'YOUR_OMDB_KEY';
+const API_KEY = 'db560b79';
 const watchlist = JSON.parse(localStorage.getItem('watchlist')) || [];
 
 async function searchMovie() {
