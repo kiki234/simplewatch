@@ -12,7 +12,6 @@
       --text: #ffffff;
       --muted: #8d99ae;
       --danger: #e63946;
-      --star: #fbbf24;
     }
     *{box-sizing:border-box;margin:0;padding:0;font-family:Inter,system-ui,sans-serif}
     body{background:var(--bg);color:var(--text);display:flex;min-height:100vh}
@@ -36,8 +35,6 @@
     .btn-mini{width:279.36px;height:23px;border:none;border-radius:4px;font-size:.7rem;line-height:23px;cursor:pointer;margin:.25rem 0;transition:.2s}
     .btn-add{background:var(--accent);color:#000}
     .btn-add:hover{background:#4ab0ae}
-    .btn-trailer{background:#ff0000;color:#fff}
-    .btn-trailer:hover{background:#c00}
     .btn-remove{background:var(--danger);color:#fff}
     .btn-remove:hover{background:#c33}
     .load-more{display:block;margin:1.5rem auto;padding:.6rem 1.4rem;background:var(--accent);color:#000;border:none;border-radius:50px;cursor:pointer;font-weight:600}
@@ -47,7 +44,7 @@
 </head>
 <body>
 
-  <!-- SIDEBAR : SUDAH DITONTON -->
+  <!-- SIDEBAR : SUDAH DITONTON (judul + genre + poster + hapus) -->
   <aside>
     <h2>Sudah Ditonton</h2>
     <div class="wrap" id="watchlistItems"></div>
@@ -67,13 +64,14 @@
 
   <script>
     const API_KEY = 'db560b79';
+    const MPDB_KEY = '626|iInA5LCogmBijjgQOXLgU95Q1stJkpRv07kCsE4M';
     const watchlist = JSON.parse(localStorage.getItem('watchlist')) || [];
     let allResults = [];
     let currentIndex = 0;
     const STEP = 5;
 
-    // poster dari movieposterdb.com
-    const posterUrl = title => `https://www.movieposterdb.com/posters/${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.jpg`;
+    // poster dari movieposterdb.com dengan API-key
+    const posterUrl = imdbId => `https://api.movieposterdb.com/v1/posters/${imdbId}_300.jpg?api_key=${MPDB_KEY}`;
 
     // helper: imdb link
     const imdbLink = (txt, type = 'name') => {
@@ -109,7 +107,6 @@
       const box = document.getElementById('results');
       const btn = document.getElementById('loadMoreBtn');
       if (clear) box.innerHTML = '';
-
       const slice = allResults.slice(currentIndex, currentIndex + STEP);
       for (const m of slice) {
         const d = await (await fetch(`https://www.omdbapi.com/?apikey=${API_KEY}&i=${m.imdbID}&plot=short`)).json();
@@ -119,7 +116,7 @@
         const el = document.createElement('div');
         el.className = 'card';
         el.innerHTML = `
-          <img src="${posterUrl(d.Title)}" onerror="this.src='https://via.placeholder.com/90x135?text=No+Image'" alt="${d.Title}">
+          <img src="${posterUrl(d.imdbID)}" onerror="this.src='https://via.placeholder.com/90x135?text=No+Image'" alt="${d.Title}">
           <div class="info">
             <h3>${imdbLink(`${d.Title} (${d.Year})`, 'title')}</h3>
             <p><strong>Genre:</strong> ${genres}</p>
@@ -140,7 +137,7 @@
       if (watchlist.some(w => w.id === id)) return;
       const d = await (await fetch(`https://www.omdbapi.com/?apikey=${API_KEY}&i=${id}&plot=short`)).json();
       const genres = d.Genre !== 'N/A' ? d.Genre.split(',').slice(0, 5).join(', ') : 'Tidak tersedia';
-      watchlist.unshift({ id: d.imdbID, title: d.Title, genres, poster: posterUrl(d.Title) });
+      watchlist.unshift({ id: d.imdbID, title: d.Title, genres, poster: posterUrl(d.imdbID) });
       localStorage.setItem('watchlist', JSON.stringify(watchlist));
       renderWatchlist();
     }
