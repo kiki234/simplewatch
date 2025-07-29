@@ -13,3 +13,10 @@ button:hover{opacity:.9}
 .movie-info p.synopsis{font-size:0.9em;color:#ccc;margin-top:8px}
 .star{color:#ccc;cursor:pointer;font-size:20px}
 .star.active{color:#ffc107}
+.movie-info h3 a {
+    color: #ff6b6b;
+    text-decoration: none;
+}
+.movie-info h3 a:hover {
+    text-decoration: underline;
+}
