@@ -55,7 +55,7 @@
 </head>
 <body>
 
-  <!-- SIDEBAR : SUDAH DITONTON (hanya genre) -->
+  <!-- SIDEBAR : SUDAH DITONTON (hanya judul + genre) -->
   <aside>
     <h2>Sudah Ditonton</h2>
     <div class="wrap" id="watchlistItems"></div>
@@ -88,21 +88,15 @@
     let currentIndex = 0;
     const STEP = 5;
 
-    const trID = async t => {
-      if (!t || t === 'N/A') return 'Sinopsis tidak tersedia';
-      try {
-        const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=id&dt=t&q=${encodeURIComponent(t)}`);
-        return (await res.json())[0][0][0] || t;
-      } catch { return t; }
-    };
+    // helper: imdb link
     const imdbLink = (txt, type = 'name') => {
       const base = type === 'genre' ? 'https://www.imdb.com/search/title/?genres=' : 'https://www.imdb.com/find/?q=';
       return `<a href="${base}${encodeURIComponent(txt)}" target="_blank" rel="noopener">${txt}</a>`;
     };
 
+    // popup trailer
     const openTrailer = (title, year) => {
-      const query = `${title} ${year} trailer`;
-      const url = `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(query)}`;
+      const url = `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(title + ' ' + year + ' official trailer')}`;
       document.getElementById('trailerFrame').src = url;
       document.getElementById('trailerPopup').style.display = 'flex';
     };
@@ -111,6 +105,10 @@
       document.getElementById('trailerFrame').src = '';
     };
 
+    // poster URL builder (impawards)
+    const posterUrl = title => `https://www.impawards.com/posters/${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.jpg`;
+
+    // enter key
     document.getElementById('keyword').addEventListener('keydown', e => { if (e.key === 'Enter') searchMovies(); });
     document.getElementById('searchBtn').addEventListener('click', searchMovies);
 
@@ -134,17 +132,17 @@
       const box = document.getElementById('results');
       const btn = document.getElementById('loadMoreBtn');
       if (clear) box.innerHTML = '';
+
       const slice = allResults.slice(currentIndex, currentIndex + STEP);
       for (const m of slice) {
         const d = await (await fetch(`https://www.omdbapi.com/?apikey=${API_KEY}&i=${m.imdbID}&plot=short`)).json();
-        const plot = await trID(d.Plot);
+        const plot = d.Plot !== 'N/A' ? d.Plot : 'Sinopsis tidak tersedia';
         const genres = d.Genre !== 'N/A' ? d.Genre.split(',').slice(0, 5).join(', ') : 'Tidak tersedia';
-        const director = d.Director !== 'N/A' ? imdbLink(d.Director.trim()) : 'Tidak tersedia';
 
         const el = document.createElement('div');
         el.className = 'card';
         el.innerHTML = `
-          <img src="${d.Poster !== 'N/A' ? d.Poster : 'https://via.placeholder.com/90x135?text=No+Image'}" alt="${d.Title}">
+          <img src="${posterUrl(d.Title)}" onerror="this.src='https://via.placeholder.com/90x135?text=No+Image'" alt="${d.Title}">
           <div class="info">
             <h3>${imdbLink(`${d.Title} (${d.Year})`, 'title')}</h3>
             <p><strong>Genre:</strong> ${genres}</p>
@@ -165,7 +163,7 @@
       if (watchlist.some(w => w.id === id)) return;
       const d = await (await fetch(`https://www.omdbapi.com/?apikey=${API_KEY}&i=${id}&plot=short`)).json();
       const genres = d.Genre !== 'N/A' ? d.Genre.split(',').slice(0, 5).join(', ') : 'Tidak tersedia';
-      watchlist.unshift({ id: d.imdbID, genres });
+      watchlist.unshift({ id: d.imdbID, title: d.Title, genres });
       localStorage.setItem('watchlist', JSON.stringify(watchlist));
       renderWatchlist();
     }
@@ -175,12 +173,13 @@
       box.innerHTML = watchlist.length
         ? ''
         : '<p style="text-align:center;color:var(--muted)">Belum ada film ditonton</p>';
-      watchlist.forEach((g) => {
+      watchlist.forEach(m => {
         const el = document.createElement('div');
         el.className = 'card';
         el.innerHTML = `
-          <div class="info" style="width:100%">
-            <p style="font-size:.9rem;margin:0"><strong>${g.genres}</strong></p>
+          <div class="info">
+            <h3>${imdbLink(m.title, 'title')}</h3>
+            <p><strong>Genre:</strong> ${m.genres}</p>
           </div>
         `;
         box.appendChild(el);
