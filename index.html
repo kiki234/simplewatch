@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>My Watchlist</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fas fa-film"></i> My Watchlist</h1>
+
+        <div class="input-section">
+            <input id="titleInput" placeholder="Masukkan judul film..." onkeypress="if(event.key==='Enter') searchMovie()">
+            <button onclick="searchMovie()"><i class="fas fa-plus"></i> Cari</button>
+        </div>
+
+        <div id="results"></div>
+
+        <h2>Film yang Sudah Ditonton</h2>
+        <div id="watchlist"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
