@@ -1,6 +1,19 @@
 const API_KEY = 'db560b79';
 const watchlist = JSON.parse(localStorage.getItem('watchlist')) || [];
 
+// Fungsi terjemahan menggunakan Google Translate API gratis
+async function translateToIndonesia(text) {
+    if (!text || text === 'N/A') return 'Sinopsis tidak tersedia';
+    
+    try {
+        const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=id&dt=t&q=${encodeURIComponent(text)}`);
+        const data = await res.json();
+        return data[0][0][0] || text;
+    } catch {
+        return text; // Fallback ke teks asli jika gagal
+    }
+}
+
 async function searchMovie() {
     const title = document.getElementById('titleInput').value.trim();
     if (!title) return;
@@ -13,17 +26,18 @@ async function searchMovie() {
         return;
     }
 
-    displayResult(data);
+    const translatedPlot = await translateToIndonesia(data.Plot);
+    displayResult(data, translatedPlot);
 }
 
-function displayResult(movie) {
+function displayResult(movie, translatedPlot) {
     const div = document.createElement('div');
     div.className = 'movie-card';
     div.innerHTML = `
         <img src="${movie.Poster !== 'N/A' ? movie.Poster : 'https://via.placeholder.com/80x120?text=No+Image'}" alt="${movie.Title}">
         <div class="movie-info">
             <h3>${movie.Title} (${movie.Year})</h3>
-            <p class="synopsis">${movie.Plot}</p>
+            <p class="synopsis"><strong>Sinopsis:</strong> ${translatedPlot}</p>
             <button onclick="addToWatchlist('${movie.imdbID}')">Tambahkan ke Watchlist</button>
         </div>
     `;
@@ -36,13 +50,14 @@ async function addToWatchlist(id) {
 
     const res = await fetch(`https://www.omdbapi.com/?apikey=${API_KEY}&i=${id}&plot=short`);
     const movie = await res.json();
+    const translatedPlot = await translateToIndonesia(movie.Plot);
 
     watchlist.unshift({
         id: movie.imdbID,
         title: movie.Title,
         year: movie.Year,
         poster: movie.Poster,
-        plot: movie.Plot,
+        plot: translatedPlot,
         rating: 0
     });
 
@@ -68,7 +83,7 @@ function displayWatchlist() {
             <img src="${m.poster !== 'N/A' ? m.poster : 'https://via.placeholder.com/80x120?text=No+Image'}" alt="${m.title}">
             <div class="movie-info">
                 <h3>${m.title} (${m.year})</h3>
-                <p class="synopsis">${m.plot}</p>
+                <p class="synopsis"><strong>Sinopsis:</strong> ${m.plot}</p>
                 <div>${generateStars(i, m.rating)}</div>
                 <button onclick="removeMovie(${i})">Hapus</button>
             </div>
