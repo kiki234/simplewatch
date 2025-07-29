@@ -1,11 +1,11 @@
-const API_KEY = 'db560b79'; // <- Ganti dengan kunci Anda
+const API_KEY = 'YOUR_OMDB_KEY';
 const watchlist = JSON.parse(localStorage.getItem('watchlist')) || [];
 
 async function searchMovie() {
     const title = document.getElementById('titleInput').value.trim();
     if (!title) return;
 
-    const res = await fetch(`https://www.omdbapi.com/?apikey=${API_KEY}&t=${encodeURIComponent(title)}`);
+    const res = await fetch(`https://www.omdbapi.com/?apikey=${API_KEY}&t=${encodeURIComponent(title)}&plot=short`);
     const data = await res.json();
 
     if (data.Response === 'False') {
@@ -23,6 +23,7 @@ function displayResult(movie) {
         <img src="${movie.Poster !== 'N/A' ? movie.Poster : 'https://via.placeholder.com/80x120?text=No+Image'}" alt="${movie.Title}">
         <div class="movie-info">
             <h3>${movie.Title} (${movie.Year})</h3>
+            <p class="synopsis">${movie.Plot}</p>
             <button onclick="addToWatchlist('${movie.imdbID}')">Tambahkan ke Watchlist</button>
         </div>
     `;
@@ -33,7 +34,7 @@ function displayResult(movie) {
 async function addToWatchlist(id) {
     if (watchlist.find(m => m.id === id)) return alert('Sudah ada dalam watchlist');
 
-    const res = await fetch(`https://www.omdbapi.com/?apikey=${API_KEY}&i=${id}`);
+    const res = await fetch(`https://www.omdbapi.com/?apikey=${API_KEY}&i=${id}&plot=short`);
     const movie = await res.json();
 
     watchlist.unshift({
@@ -41,6 +42,7 @@ async function addToWatchlist(id) {
         title: movie.Title,
         year: movie.Year,
         poster: movie.Poster,
+        plot: movie.Plot,
         rating: 0
     });
 
@@ -66,6 +68,7 @@ function displayWatchlist() {
             <img src="${m.poster !== 'N/A' ? m.poster : 'https://via.placeholder.com/80x120?text=No+Image'}" alt="${m.title}">
             <div class="movie-info">
                 <h3>${m.title} (${m.year})</h3>
+                <p class="synopsis">${m.plot}</p>
                 <div>${generateStars(i, m.rating)}</div>
                 <button onclick="removeMovie(${i})">Hapus</button>
             </div>
@@ -94,5 +97,4 @@ function removeMovie(index) {
     displayWatchlist();
 }
 
-// Tampilkan saat pertama kali dibuka
 displayWatchlist();
