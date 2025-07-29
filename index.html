@@ -35,7 +35,7 @@
     .btn-mini{width:40px;height:23px;border:none;border-radius:4px;font-size:.7rem;line-height:23px;cursor:pointer;margin:.25rem 0;transition:.2s}
     .btn-add{background:var(--accent);color:#000}
     .btn-add:hover{background:#4ab0ae}
-    .btn-remove{background:var(--danger);color:#fff}
+    .btn-remove{background:var(--danger);color:#fff;font-size:.7rem}
     .btn-remove:hover{background:#c33}
     .load-more{display:block;margin:1.5rem auto;padding:.6rem 1.4rem;background:var(--accent);color:#000;border:none;border-radius:50px;cursor:pointer;font-weight:600}
     .hidden{display:none}
@@ -69,17 +69,9 @@
     let currentIndex = 0;
     const STEP = 5;
 
-    // poster dari OMDb
-    const posterUrl = imdbId => `https://image.tmdb.org/t/p/w500${imdbId}.jpg`;
-
     const imdbLink = (txt, type = 'name') => {
       const base = type === 'genre' ? 'https://www.imdb.com/search/title/?genres=' : 'https://www.imdb.com/find/?q=';
       return `<a href="${base}${encodeURIComponent(txt)}" target="_blank" rel="noopener">${txt}</a>`;
-    };
-
-    // trailer new tab
-    const openTrailer = (title, year) => {
-      window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(title + ' ' + year + ' official trailer')}`, '_blank');
     };
 
     document.getElementById('keyword').addEventListener('keydown', e => { if (e.key === 'Enter') searchMovies(); });
