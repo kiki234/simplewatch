@@ -15,7 +15,7 @@
       --star: #fbbf24;
     }
     *{box-sizing:border-box;margin:0;padding:0;font-family:Inter,system-ui,sans-serif}
-    body{background:var(--bg);color:var(--text);display:flex;flex-direction:column;align-items:center;min-height:100vh}
+    body{background:var(--bg);color:var(--text);display:flex;min-height:100vh}
     aside{width:320px;background:#0f172a;border-right:1px solid #2a2e45;padding:1rem;display:flex;flex-direction:column}
     aside h2{margin-bottom:.75rem;font-size:1.1rem}
     aside .wrap{display:flex;flex-direction:column;gap:.75rem}
@@ -42,27 +42,10 @@
     .star.active{color:var(--star)}
     .load-more{display:block;margin:1.5rem auto;padding:.6rem 1.4rem;background:var(--accent);color:#000;border:none;border-radius:50px;cursor:pointer;font-weight:600}
     .hidden{display:none}
-    .banner{width:100%;max-width:1200px;margin:2rem auto;overflow:hidden;position:relative}
-    .banner img{width:100%;height:300px;object-fit:cover;transition:transform .5s ease-in-out;position:absolute;top:0;left:0;display:none}
-    .banner img.active{display:block}
-    .banner .prev,.banner .next{position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.5);color:#fff;padding:.5rem;cursor:pointer;z-index:10}
-    .banner .prev{left:0}
-    .banner .next{right:0}
     @media(max-width:700px){body{flex-direction:column}aside{width:100%;border-right:none;border-bottom:1px solid #2a2e45}}
   </style>
 </head>
 <body>
-
-  <!-- BANNER UTAMA -->
-  <div class="banner">
-    <img src="https://via.placeholder.com/1200x300?text=Film+Trending+1" alt="Trending 1" class="active">
-    <img src="https://via.placeholder.com/1200x300?text=Film+Trending+2" alt="Trending 2">
-    <img src="https://via.placeholder.com/1200x300?text=Film+Trending+3" alt="Trending 3">
-    <img src="https://via.placeholder.com/1200x300?text=Film+Trending+4" alt="Trending 4">
-    <img src="https://via.placeholder.com/1200x300?text=Film+Trending+5" alt="Trending 5">
-    <div class="prev" onclick="prevSlide()">&#10094;</div>
-    <div class="next" onclick="nextSlide()">&#10095;</div>
-  </div>
 
   <!-- SIDEBAR : SUDAH DITONTON -->
   <aside>
@@ -82,6 +65,14 @@
     <button id="loadMoreBtn" class="load-more hidden">Load More</button>
   </main>
 
+  <!-- GOOGLE LOGIN BUTTON -->
+  <div id="g_id_onload"
+     data-client_id="YOUR_GOOGLE_CLIENT_ID"
+     data-callback="handleCredentialResponse">
+  </div>
+  <div class="g_id_signin"></div>
+
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script>
     const API_KEY = 'db560b79';
     const watchlist = JSON.parse(localStorage.getItem('watchlist')) || [];
@@ -118,4 +109,86 @@
       }
       const seen = new Set();
       allResults = raw.filter(m => !seen.has(m.imdbID) && seen.add(m.imdbID)).slice(0, 50);
-      currentIndex = 
+      currentIndex = 0;
+      renderResults(true);
+    }
+
+    async function renderResults(clear = true) {
+      const box = document.getElementById('results');
+      const btn = document.getElementById('loadMoreBtn');
+      if (clear) box.innerHTML = '';
+      const slice = allResults.slice(currentIndex, currentIndex + STEP);
+      for (const m of slice) {
+        const d = await (await fetch(`https://www.omdbapi.com/?apikey=${API_KEY}&i=${m.imdbID}&plot=short`)).json();
+        const plot = d.Plot !== 'N/A' ? d.Plot : 'Sinopsis tidak tersedia';
+        const genres = d.Genre !== 'N/A' ? d.Genre.split(',').slice(0, 5).join(', ') : 'Tidak tersedia';
+        const rating = Math.min(parseFloat(d.imdbRating) / 2, 5); // Convert to 5-star scale
+
+        const el = document.createElement('div');
+        el.className = 'card';
+        el.innerHTML = `
+          <img src="${d.Poster !== 'N/A' ? d.Poster : 'https://via.placeholder.com/90x135?text=No+Image'}" alt="${d.Title}">
+          <div class="info">
+            <h3>${imdbLink(`${d.Title} (${d.Year})`, 'title')}</h3>
+            <p><strong>Genre:</strong> ${genres}</p>
+            <p><strong>Sinopsis:</strong> ${plot}</p>
+            <div class="rating">${renderStars(rating)}</div>
+            <button class="btn-mini btn-add" onclick="addToWatchlist('${d.imdbID}')">+ Watchlist</button>
+          </div>
+        `;
+        box.appendChild(el);
+      }
+      currentIndex += STEP;
+      btn.classList.toggle('hidden', currentIndex >= allResults.length);
+    }
+
+    document.getElementById('loadMoreBtn').addEventListener('click', () => renderResults(false));
+
+    async function addToWatchlist(id) {
+      if (watchlist.some(w => w.id === id)) return;
+      const d = await (await fetch(`https://www.omdbapi.com/?apikey=${API_KEY}&i=${id}&plot=short`)).json();
+      const genres = d.Genre !== 'N/A' ? d.Genre.split(',').slice(0, 5).join(', ') : 'Tidak tersedia';
+      const rating = Math.min(parseFloat(d.imdbRating) / 2, 5); // Convert to 5-star scale
+      watchlist.unshift({ id: d.imdbID, title: d.Title, genres, poster: d.Poster, rating });
+      localStorage.setItem('watchlist', JSON.stringify(watchlist));
+      renderWatchlist();
+    }
+
+    function renderWatchlist() {
+      const box = document.getElementById('watchlistItems');
+      box.innerHTML = watchlist.length
+        ? ''
+        : '<p style="text-align:center;color:var(--muted)">Belum ada film ditonton</p>';
+      watchlist.forEach(m => {
+        const el = document.createElement('div');
+        el.className = 'card';
+        el.innerHTML = `
+          <img src="${m.poster !== 'N/A' ? m.poster : 'https://via.placeholder.com/90x135?text=No+Image'}" alt="${m.title}">
+          <div class="info">
+            <h3>${imdbLink(m.title, 'title')}</h3>
+            <p><strong>Genre:</strong> ${m.genres}</p>
+            <div class="rating">${renderStars(m.rating)}</div>
+            <button class="btn-mini btn-remove" onclick="remove('${m.id}')">Hapus</button>
+          </div>
+        `;
+        box.appendChild(el);
+      });
+    }
+
+    function remove(id) {
+      watchlist.splice(watchlist.findIndex(w => w.id === id), 1);
+      localStorage.setItem('watchlist', JSON.stringify(watchlist));
+      renderWatchlist();
+    }
+
+    renderWatchlist();
+
+    // Google Login
+    function handleCredentialResponse(response) {
+      const token = response.credential;
+      console.log(token);
+      // Here you can send the token to your backend server
+    }
+  </script>
+</body>
+</html>
