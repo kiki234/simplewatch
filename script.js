@@ -1,270 +1,81 @@
+// --- bagian atas tetap sama ---
 const API_KEY = 'db560b79';
 const watchlist = JSON.parse(localStorage.getItem('watchlist')) || [];
 
-// Fungsi terjemahan menggunakan Google Translate API gratis
+// ambil & terjemahkan sinopsis
 async function translateToIndonesia(text) {
     if (!text || text === 'N/A') return 'Sinopsis tidak tersedia';
-    
     try {
-        const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=id&dt=t&q=${encodeURIComponent(text)}`);
+        const res = await fetch(
+            `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=id&dt=t&q=${encodeURIComponent(text)}`
+        );
         const data = await res.json();
         return data[0][0][0] || text;
     } catch {
-        return text; // Fallback ke teks asli jika gagal
+        return text;
     }
 }
 
+// pencarian massal (sampai 50 hasil)
 async function searchMovie() {
-    const title = document.getElementById('titleInput').value.trim();
-    if (!title) return;
+    const keyword = document.getElementById('titleInput').value.trim();
+    if (!keyword) return;
 
-    const res = await fetch(`https://www.omdbapi.com/?apikey=${API_KEY}&t=${encodeURIComponent(title)}&plot=short`);
+    const page1 = await fetchPage(keyword, 1);
+    const page2 = await fetchPage(keyword, 2);
+
+    let allMovies = [...page1, ...page2].slice(0, 50);
+    displaySearchResults(allMovies);
+}
+
+// ambil 1 halaman (max 10 item)
+async function fetchPage(keyword, page) {
+    const res = await fetch(
+        `https://www.omdbapi.com/?apikey=${API_KEY}&s=${encodeURIComponent(keyword)}&type=movie&page=${page}`
+    );
     const data = await res.json();
+    return data.Response === 'True' ? data.Search : [];
+}
 
-    if (data.Response === 'False') {
-        alert('Film tidak ditemukan');
+// tampilkan semua hasil
+async function displaySearchResults(movies) {
+    const container = document.getElementById('results');
+    container.innerHTML = '';
+
+    if (movies.length === 0) {
+        container.innerHTML = '<p style="text-align:center;color:#aaa;">Tidak ditemukan</p>';
         return;
     }
 
-    const translatedPlot = await translateToIndonesia(data.Plot);
-    displayResult(data, translatedPlot);
-}
+    for (const m of movies) {
+        const detail = await (
+            await fetch(`https://www.omdbapi.com/?apikey=${API_KEY}&i=${m.imdbID}&plot=short`)
+        ).json();
+        const translatedPlot = await translateToIndonesia(detail.Plot);
 
-function displayResult(movie, translatedPlot) {
-    const div = document.createElement('div');
-    div.className = 'movie-card';
-    div.innerHTML = `
-        <img src="${movie.Poster !== 'N/A' ? movie.Poster : 'https://via.placeholder.com/80x120?text=No+Image'}" alt="${movie.Title}">
-        <div class="movie-info">
-            <h3>${movie.Title} (${movie.Year})</h3>
-            <p class="synopsis"><strong>Sinopsis:</strong> ${translatedPlot}</p>
-            <button onclick="addToWatchlist('${movie.imdbID}')">Tambahkan ke Watchlist</button>
-        </div>
-    `;
-    document.getElementById('results').innerHTML = '';
-    document.getElementById('results').appendChild(div);
-}
+        const actors = detail.Actors !== 'N/A' ? detail.Actors.split(',').slice(0, 5).join(', ') : 'Tidak tersedia';
+        const genres = detail.Genre !== 'N/A' ? detail.Genre.split(',').slice(0, 5).join(', ') : 'Tidak tersedia';
+        const director = detail.Director !== 'N/A' ? detail.Director : 'Tidak tersedia';
 
-async function addToWatchlist(id) {
-    if (watchlist.find(m => m.id === id)) return alert('Sudah ada dalam watchlist');
-
-    const res = await fetch(`https://www.omdbapi.com/?apikey=${API_KEY}&i=${id}&plot=short`);
-    const movie = await res.json();
-    const translatedPlot = await translateToIndonesia(movie.Plot);
-
-    watchlist.unshift({
-        id: movie.imdbID,
-        title: movie.Title,
-        year: movie.Year,
-        poster: movie.Poster,
-        plot: translatedPlot,
-        rating: 0
-    });
-
-    localStorage.setItem('watchlist', JSON.stringify(watchlist));
-    displayWatchlist();
-    document.getElementById('results').innerHTML = '';
-    document.getElementById('titleInput').value = '';
-}
-
-function displayWatchlist() {
-    const list = document.getElementById('watchlist');
-    list.innerHTML = '';
-
-    if (watchlist.length === 0) {
-        list.innerHTML = '<p style="text-align:center;color:#aaa;">Belum ada film</p>';
-        return;
-    }
-
-    watchlist.forEach((m, i) => {
-        const div = document.createElement('div');
-        div.className = 'movie-card';
-        div.innerHTML = `
-            <img src="${m.poster !== 'N/A' ? m.poster : 'https://via.placeholder.com/80x120?text=No+Image'}" alt="${m.title}">
-            <div class="movie-info">
-                <h3>${m.title} (${m.year})</h3>
-                <p class="synopsis"><strong>Sinopsis:</strong> ${m.plot}</p>
-                <div>${generateStars(i, m.rating)}</div>
-                <button onclick="removeMovie(${i})">Hapus</button>
-            </div>
-        `;
-        list.appendChild(div);
-    });
-}
-
-function generateStars(index, rating) {
-    let stars = '';
-    for (let i = 1; i <= 5; i++) {
-        stars += `<span class="star ${i <= rating ? 'active' : ''}" onclick="rateMovie(${index}, ${i})">★</span>`;
-    }
-    return stars;
-}
-
-function rateMovie(index, stars) {
-    watchlist[index].rating = stars;
-    localStorage.setItem('watchlist', JSON.stringify(watchlist));
-    displayWatchlist();
-}
-
-function removeMovie(index) {
-    watchlist.splice(index, 1);
-    localStorage.setItem('watchlist', JSON.stringify(watchlist));
-    displayWatchlist();
-}
-
-displayWatchlist();
-// ... (fungsi lain tetap sama)
-
-function displayResult(movie, translatedPlot) {
-    const div = document.createElement('div');
-    div.className = 'movie-card';
-    div.innerHTML = `
-        <img src="${movie.Poster !== 'N/A' ? movie.Poster : 'https://via.placeholder.com/80x120?text=No+Image'}" alt="${movie.Title}">
-        <div class="movie-info">
-            <h3>
-                <a href="https://www.imdb.com/title/${movie.imdbID}" target="_blank" rel="noopener noreferrer">
-                    ${movie.Title} (${movie.Year})
-                </a>
-            </h3>
-            <p class="synopsis"><strong>Sinopsis:</strong> ${translatedPlot}</p>
-            <button onclick="addToWatchlist('${movie.imdbID}')">Tambahkan ke Watchlist</button>
-        </div>
-    `;
-    document.getElementById('results').innerHTML = '';
-    document.getElementById('results').appendChild(div);
-}
-
-function displayWatchlist() {
-    const list = document.getElementById('watchlist');
-    list.innerHTML = '';
-
-    if (watchlist.length === 0) {
-        list.innerHTML = '<p style="text-align:center;color:#aaa;">Belum ada film</p>';
-        return;
-    }
-
-    watchlist.forEach((m, i) => {
-        const div = document.createElement('div');
-        div.className = 'movie-card';
-        div.innerHTML = `
-            <img src="${m.poster !== 'N/A' ? m.poster : 'https://via.placeholder.com/80x120?text=No+Image'}" alt="${m.title}">
+        const card = document.createElement('div');
+        card.className = 'movie-card';
+        card.innerHTML = `
+            <img src="${m.Poster !== 'N/A' ? m.Poster : 'https://via.placeholder.com/80x120?text=No+Image'}" alt="${m.Title}">
             <div class="movie-info">
                 <h3>
-                    <a href="https://www.imdb.com/title/${m.id}" target="_blank" rel="noopener noreferrer">
-                        ${m.title} (${m.year})
+                    <a href="https://www.imdb.com/title/${m.imdbID}" target="_blank" rel="noopener noreferrer">
+                        ${m.Title} (${m.Year})
                     </a>
                 </h3>
-                <p class="synopsis"><strong>Sinopsis:</strong> ${m.plot}</p>
-                <div>${generateStars(i, m.rating)}</div>
-                <button onclick="removeMovie(${i})">Hapus</button>
+                <p><strong>Sutradara:</strong> ${director}</p>
+                <p><strong>Pemeran:</strong> ${actors}</p>
+                <p><strong>Genre:</strong> ${genres}</p>
+                <p class="synopsis"><strong>Sinopsis:</strong> ${translatedPlot}</p>
+                <button onclick="addToWatchlist('${m.imdbID}')">Tambahkan ke Watchlist</button>
             </div>
         `;
-        list.appendChild(div);
-    });
-}
-// ... (fungsi lain tetap sama)
-
-async function searchMovie() {
-    const title = document.getElementById('titleInput').value.trim();
-    if (!title) return;
-
-    const res = await fetch(`https://www.omdbapi.com/?apikey=${API_KEY}&t=${encodeURIComponent(title)}&plot=short`);
-    const data = await res.json();
-
-    if (data.Response === 'False') {
-        alert('Film tidak ditemukan');
-        return;
+        container.appendChild(card);
     }
-
-    const translatedPlot = await translateToIndonesia(data.Plot);
-    displayResult(data, translatedPlot);
 }
 
-function displayResult(movie, translatedPlot) {
-    // ambil maks 5 aktor & 5 genre
-    const actors = movie.Actors !== 'N/A' ? movie.Actors.split(',').slice(0, 5).join(', ') : 'Tidak tersedia';
-    const genres = movie.Genre !== 'N/A' ? movie.Genre.split(',').slice(0, 5).join(', ') : 'Tidak tersedia';
-    const director = movie.Director !== 'N/A' ? movie.Director : 'Tidak tersedia';
-
-    const div = document.createElement('div');
-    div.className = 'movie-card';
-    div.innerHTML = `
-        <img src="${movie.Poster !== 'N/A' ? movie.Poster : 'https://via.placeholder.com/80x120?text=No+Image'}" alt="${movie.Title}">
-        <div class="movie-info">
-            <h3>
-                <a href="https://www.imdb.com/title/${movie.imdbID}" target="_blank" rel="noopener noreferrer">
-                    ${movie.Title} (${movie.Year})
-                </a>
-            </h3>
-            <p><strong>Sutradara:</strong> ${director}</p>
-            <p><strong>Pemeran:</strong> ${actors}</p>
-            <p><strong>Genre:</strong> ${genres}</p>
-            <p class="synopsis"><strong>Sinopsis:</strong> ${translatedPlot}</p>
-            <button onclick="addToWatchlist('${movie.imdbID}')">Tambahkan ke Watchlist</button>
-        </div>
-    `;
-    document.getElementById('results').innerHTML = '';
-    document.getElementById('results').appendChild(div);
-}
-
-async function addToWatchlist(id) {
-    if (watchlist.find(m => m.id === id)) return alert('Sudah ada dalam watchlist');
-
-    const res = await fetch(`https://www.omdbapi.com/?apikey=${API_KEY}&i=${id}&plot=short`);
-    const movie = await res.json();
-    const translatedPlot = await translateToIndonesia(movie.Plot);
-
-    // ambil maks 5 aktor & 5 genre
-    const actors = movie.Actors !== 'N/A' ? movie.Actors.split(',').slice(0, 5).join(', ') : 'Tidak tersedia';
-    const genres = movie.Genre !== 'N/A' ? movie.Genre.split(',').slice(0, 5).join(', ') : 'Tidak tersedia';
-    const director = movie.Director !== 'N/A' ? movie.Director : 'Tidak tersedia';
-
-    watchlist.unshift({
-        id: movie.imdbID,
-        title: movie.Title,
-        year: movie.Year,
-        poster: movie.Poster,
-        plot: translatedPlot,
-        director,
-        actors,
-        genres,
-        rating: 0
-    });
-
-    localStorage.setItem('watchlist', JSON.stringify(watchlist));
-    displayWatchlist();
-    document.getElementById('results').innerHTML = '';
-    document.getElementById('titleInput').value = '';
-}
-
-function displayWatchlist() {
-    const list = document.getElementById('watchlist');
-    list.innerHTML = '';
-
-    if (watchlist.length === 0) {
-        list.innerHTML = '<p style="text-align:center;color:#aaa;">Belum ada film</p>';
-        return;
-    }
-
-    watchlist.forEach((m, i) => {
-        const div = document.createElement('div');
-        div.className = 'movie-card';
-        div.innerHTML = `
-            <img src="${m.poster !== 'N/A' ? m.poster : 'https://via.placeholder.com/80x120?text=No+Image'}" alt="${m.title}">
-            <div class="movie-info">
-                <h3>
-                    <a href="https://www.imdb.com/title/${m.id}" target="_blank" rel="noopener noreferrer">
-                        ${m.title} (${m.year})
-                    </a>
-                </h3>
-                <p><strong>Sutradara:</strong> ${m.director}</p>
-                <p><strong>Pemeran:</strong> ${m.actors}</p>
-                <p><strong>Genre:</strong> ${m.genres}</p>
-                <p class="synopsis"><strong>Sinopsis:</strong> ${m.plot}</p>
-                <div>${generateStars(i, m.rating)}</div>
-                <button onclick="removeMovie(${i})">Hapus</button>
-            </div>
-        `;
-        list.appendChild(div);
-    });
-}
+// --- fungsi addToWatchlist, displayWatchlist, dll tetap sama (copy dari jawaban sebelumnya) ---
