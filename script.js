@@ -1,14 +1,14 @@
-// --- bagian atas tetap sama ---
 const API_KEY = 'db560b79';
 const watchlist = JSON.parse(localStorage.getItem('watchlist')) || [];
 
-// ambil & terjemahkan sinopsis
+let allResults = []; // semua hasil unik
+let currentIndex = 0; // indeks untuk load-more
+const LOAD_STEP = 10;
+
 async function translateToIndonesia(text) {
     if (!text || text === 'N/A') return 'Sinopsis tidak tersedia';
     try {
-        const res = await fetch(
-            `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=id&dt=t&q=${encodeURIComponent(text)}`
-        );
+        const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=id&dt=t&q=${encodeURIComponent(text)}`);
         const data = await res.json();
         return data[0][0][0] || text;
     } catch {
@@ -16,38 +16,47 @@ async function translateToIndonesia(text) {
     }
 }
 
-// pencarian massal (sampai 50 hasil)
+// ambil semua hasil (maks 5 halaman = 50 item)
 async function searchMovie() {
     const keyword = document.getElementById('titleInput').value.trim();
     if (!keyword) return;
 
-    const page1 = await fetchPage(keyword, 1);
-    const page2 = await fetchPage(keyword, 2);
+    const pages = [1, 2, 3, 4, 5]; // maks 50 item
+    let raw = [];
 
-    let allMovies = [...page1, ...page2].slice(0, 50);
-    displaySearchResults(allMovies);
-}
-
-// ambil 1 halaman (max 10 item)
-async function fetchPage(keyword, page) {
-    const res = await fetch(
-        `https://www.omdbapi.com/?apikey=${API_KEY}&s=${encodeURIComponent(keyword)}&type=movie&page=${page}`
-    );
-    const data = await res.json();
-    return data.Response === 'True' ? data.Search : [];
-}
-
-// tampilkan semua hasil
-async function displaySearchResults(movies) {
-    const container = document.getElementById('results');
-    container.innerHTML = '';
-
-    if (movies.length === 0) {
-        container.innerHTML = '<p style="text-align:center;color:#aaa;">Tidak ditemukan</p>';
-        return;
+    for (const p of pages) {
+        const res = await fetch(
+            `https://www.omdbapi.com/?apikey=${API_KEY}&s=${encodeURIComponent(keyword)}&type=movie&page=${p}`
+        );
+        const data = await res.json();
+        if (data.Response === 'True') raw.push(...data.Search);
+        else break; // stop jika halaman kosong
     }
 
-    for (const m of movies) {
+    // hilangkan duplikat berdasarkan imdbID
+    const unique = [];
+    const seen = new Set();
+    raw.forEach(m => {
+        if (!seen.has(m.imdbID)) {
+            seen.add(m.imdbID);
+            unique.push(m);
+        }
+    });
+
+    allResults = unique.slice(0, 50); // pastikan maks 50
+    currentIndex = 0;
+
+    renderResults();
+}
+
+// render 10 item pertama + tambah tombol load-more jika masih ada
+function renderResults() {
+    const container = document.getElementById('results');
+    // clear sebelumnya hanya saat search baru
+    if (currentIndex === 0) container.innerHTML = '';
+
+    const nextBatch = allResults.slice(currentIndex, currentIndex + LOAD_STEP);
+    nextBatch.forEach(async m => {
         const detail = await (
             await fetch(`https://www.omdbapi.com/?apikey=${API_KEY}&i=${m.imdbID}&plot=short`)
         ).json();
@@ -75,7 +84,20 @@ async function displaySearchResults(movies) {
             </div>
         `;
         container.appendChild(card);
+    });
+
+    currentIndex += LOAD_STEP;
+
+    // sembunyikan / tampilkan tombol Load More
+    const oldBtn = document.getElementById('loadMoreBtn');
+    if (oldBtn) oldBtn.remove();
+
+    if (currentIndex < allResults.length) {
+        const loadBtn = document.createElement('button');
+        loadBtn.id = 'loadMoreBtn';
+        loadBtn.textContent = 'Load More';
+        loadBtn.onclick = renderResults;
+        document.getElementById('results').appendChild(loadBtn);
     }
 }
-
-// --- fungsi addToWatchlist, displayWatchlist, dll tetap sama (copy dari jawaban sebelumnya) ---
+// --- fungsi addToWatchlist, displayWatchlist, dll tetap sama (copy dari sebelumnya) ---
