@@ -8,23 +8,22 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="app">
-    <!-- Sidebar kiri: watchlist -->
-    <aside id="sidebar" class="sidebar">
-      <h2>Sudah Ditonton</h2>
-      <div id="watchlistItems"></div>
-    </aside>
+  <div class="container">
+    <h1>My Watchlist</h1>
 
-    <!-- Konten utama: search + horizontal results -->
-    <main class="main">
-      <div class="search-bar">
-        <input id="keyword" type="text" placeholder="Cari film..." />
-        <button id="searchBtn">Cari</button>
-      </div>
+    <div class="search-bar">
+      <input id="keyword" type="text" placeholder="Cari film..." />
+      <button id="searchBtn">Cari</button>
+    </div>
 
-      <!-- horizontal scroll container -->
-      <section id="results" class="results-horizontal"></section>
-    </main>
+    <!-- Hasil pencarian -->
+    <section id="results" class="results-vertical"></section>
+
+    <button id="loadMoreBtn" class="load-more hidden">Load More</button>
+
+    <!-- Sudah ditonton -->
+    <h2>Sudah Ditonton</h2>
+    <section id="watchlistItems" class="results-vertical"></section>
   </div>
 
   <script src="script.js"></script>
