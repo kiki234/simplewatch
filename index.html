@@ -35,6 +35,8 @@
     .btn-mini{width:279.36px;height:23px;border:none;border-radius:4px;font-size:.7rem;line-height:23px;cursor:pointer;margin:.25rem 0;transition:.2s}
     .btn-add{background:var(--accent);color:#000}
     .btn-add:hover{background:#4ab0ae}
+    .btn-trailer{background:#ff0000;color:#fff}
+    .btn-trailer:hover{background:#c00}
     .btn-remove{background:var(--danger);color:#fff}
     .btn-remove:hover{background:#c33}
     .load-more{display:block;margin:1.5rem auto;padding:.6rem 1.4rem;background:var(--accent);color:#000;border:none;border-radius:50px;cursor:pointer;font-weight:600}
@@ -44,7 +46,7 @@
 </head>
 <body>
 
-  <!-- SIDEBAR : SUDAH DITONTON (judul + genre + poster + hapus) -->
+  <!-- SIDEBAR : SUDAH DITONTON -->
   <aside>
     <h2>Sudah Ditonton</h2>
     <div class="wrap" id="watchlistItems"></div>
@@ -70,16 +72,14 @@
     let currentIndex = 0;
     const STEP = 5;
 
-    // poster dari movieposterdb.com dengan API-key
+    // poster dari movieposterdb.com (API)
     const posterUrl = imdbId => `https://api.movieposterdb.com/v1/posters/${imdbId}_300.jpg?api_key=${MPDB_KEY}`;
 
-    // helper: imdb link
     const imdbLink = (txt, type = 'name') => {
       const base = type === 'genre' ? 'https://www.imdb.com/search/title/?genres=' : 'https://www.imdb.com/find/?q=';
       return `<a href="${base}${encodeURIComponent(txt)}" target="_blank" rel="noopener">${txt}</a>`;
     };
 
-    // trailer new tab
     const openTrailer = (title, year) => {
       window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(title + ' ' + year + ' official trailer')}`, '_blank');
     };
