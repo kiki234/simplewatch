@@ -2,25 +2,29 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>My Watchlist</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="container">
-    <h1>Tontonan Ku</h1>
-
-    <div class="search-bar">
-      <input id="keyword" type="text" placeholder="Cari film..." maxlength="100" />
-      <button id="searchBtn">Cari</button>
-    </div>
-
-    <section id="results"></section>
-    <section id="watchlist">
+  <div class="app">
+    <!-- Sidebar kiri: watchlist -->
+    <aside id="sidebar" class="sidebar">
       <h2>Sudah Ditonton</h2>
       <div id="watchlistItems"></div>
-    </section>
+    </aside>
+
+    <!-- Konten utama: search + horizontal results -->
+    <main class="main">
+      <div class="search-bar">
+        <input id="keyword" type="text" placeholder="Cari film..." />
+        <button id="searchBtn">Cari</button>
+      </div>
+
+      <!-- horizontal scroll container -->
+      <section id="results" class="results-horizontal"></section>
+    </main>
   </div>
 
   <script src="script.js"></script>
