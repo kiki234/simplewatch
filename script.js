@@ -1,4 +1,4 @@
-const API_KEY = 'YOUR_OMDB_KEY'; // <- Ganti dengan kunci Anda
+const API_KEY = 'db560b79'; // <- Ganti dengan kunci Anda
 const watchlist = JSON.parse(localStorage.getItem('watchlist')) || [];
 
 async function searchMovie() {
